@@ -1,7 +1,1 @@
-	 notation-block-api
-		  .git
-		  .github
-			  .gitignore
-			  LICENSE
-			  README.md
-			  requirements.txt
+flake8>=6<6.1
