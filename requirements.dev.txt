@@ -1,0 +1,7 @@
+	 notation-block-api
+		  .git
+		  .github
+			  .gitignore
+			  LICENSE
+			  README.md
+			  requirements.txt
