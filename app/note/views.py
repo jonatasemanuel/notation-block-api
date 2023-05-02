@@ -27,3 +27,7 @@ class NoteViewSet(viewsets.ModelViewSet):
             return serializers.NoteSerializer
 
         return self.serializer_class
+
+    def perform_create(self, serializer):
+        """Create a new note."""
+        serializer.save(user=self.request.user)
