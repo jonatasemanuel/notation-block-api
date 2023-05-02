@@ -96,7 +96,7 @@ class PrivateNoteApiTests(TestCase):
         self.assertEqual(res.data, serializer.data)
 
     def test_create_note(self):
-        """Test creating a note"""
+        """Test creating a note."""
         payload = {
             'title': 'Sample note',
             'description': 'Something',
@@ -108,3 +108,82 @@ class PrivateNoteApiTests(TestCase):
         for key, value in payload.items():
             self.assertEqual(getattr(note, key), value)
         self.assertEqual(note.user, self.user)
+
+    def test_partial_update(self):
+        """Test partial update of a note."""
+        original_link = 'http://example.com/note.pdf'
+        note = create_note(
+            user=self.user,
+            title='Sample note title',
+            ref=original_link,
+        )
+
+        payload = {'title': 'New note title'}
+        url = detail_url(note.id)
+        res = self.client.patch(url, payload)
+
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        note.refresh_from_db()
+        self.assertEqual(note.title, payload['title'])
+        self.assertEqual(note.ref, original_link)
+        self.assertEqual(note.user, self.user)
+
+    def test_full_update(self):
+        """Test full update of note"""
+        note = create_note(
+            user=self.user,
+            title='Sample note title',
+            ref='http://example.com/note.pdf',
+            description='Sample note description.',
+            notation='Something'
+        )
+
+        payload = {
+            'title': 'new note title',
+            'ref': 'http://example.com/docs.pdf',
+            'description': 'No description.',
+            'notation':'new note',
+        }
+
+        url = detail_url(note.id)
+        res = self.client.put(url, payload)
+
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        note.refresh_from_db()
+        for key, value in payload.items():
+            self.assertEqual(getattr(note, key), value)
+        self.assertEqual(note.user, self.user)
+
+    def test_update_user_returns_error(self):
+        """Test changing the note user results in an error."""
+        new_user = create_user(email='user2@example.com', password='test123')
+        note = create_note(user=self.user)
+
+        payload = {'user': new_user.id}
+        url = detail_url(note.id)
+
+        self.client.patch(url, payload)
+
+        note.refresh_from_db()
+        self.assertEqual(note.user, self.user)
+
+    def test_delete_note(self):
+        """Test deleting a note successful."""
+        note = create_note(user=self.user)
+
+        url = detail_url(note.id)
+        res = self.client.delete(url)
+
+        self.assertEqual(res.status_code, status.HTTP_204_NO_CONTENT)
+        self.assertFalse(Note.objects.filter(id=note.id).exists())
+
+    def test_note_other_users_note_error(self):
+        """Test trying to delete another users note give error."""
+        new_user = create_user(email='user2@example.com', password='test123')
+        note = create_note(user=new_user)
+
+        url = detail_url(note.id)
+        res = self.client.delete(url)
+
+        self.assertEqual(res.status_code, status.HTTP_404_NOT_FOUND)
+        self.assertTrue(Note.objects.filter(id=note.id).exists())
