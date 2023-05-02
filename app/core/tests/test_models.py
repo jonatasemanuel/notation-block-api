@@ -56,7 +56,7 @@ class ModelTests(TestCase):
             user=user,
             title='Sample note name',
             description='Sample note description.',
-            notation = 'Everything that you need write',
+            notation='Everything that you need write',
         )
 
         self.assertEqual(str(note), note.title)
