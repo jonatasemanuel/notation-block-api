@@ -1,6 +1,8 @@
 """
 Test for models.
 """
+from core import models
+
 from django.contrib.auth import get_user_model
 from django.test import TestCase
 
@@ -43,3 +45,18 @@ class ModelTests(TestCase):
         )
         self.assertTrue(user.is_superuser)
         self.assertTrue(user.is_staff)
+
+    def test_create_note(self):
+        """Test creating a note is successful."""
+        user = get_user_model().objects.create_user(
+            'test@example.com',
+            'testpass123',
+        )
+        note = models.Note.objects.create(
+            user=user,
+            title='Sample note name',
+            description='Sample note description.',
+            notation = 'Everything that you need write',
+        )
+
+        self.assertEqual(str(note), note.title)
