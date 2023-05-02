@@ -34,6 +34,10 @@ def create_note(user, **params):
     note = Note.objects.create(user=user, **defaults)
     return note
 
+def create_user(**params):
+    """Create and return a new user."""
+    return get_user_model().objects.create_user(**params)
+
 
 class PublicNoteApiTests(TestCase):
     """Test unauthenticated API request."""
@@ -53,10 +57,7 @@ class PrivateNoteApiTests(TestCase):
 
     def setUp(self):
         self.client = APIClient()
-        self.user = get_user_model().objects.create_user(
-            'user@example.com',
-            'testpass123',
-        )
+        self.user = create_user(email='user@example.com', password='test123')
         self.client.force_authenticate(self.user)
 
     def test_retrieve_notes(self):
@@ -73,10 +74,7 @@ class PrivateNoteApiTests(TestCase):
 
     def test_note_list_limited_to_user(self):
         """Test list of notes is limited to authenticated user."""
-        other_user = get_user_model().objects.create_user(
-            'other@example.com',
-            'password123',
-        )
+        other_user = create_user(email='other@example.com', password='test123')
         create_note(user=other_user)
         create_note(user=self.user)
 
@@ -96,3 +94,17 @@ class PrivateNoteApiTests(TestCase):
 
         serializer = NoteDetailSerializer(note)
         self.assertEqual(res.data, serializer.data)
+
+    def test_create_note(self):
+        """Test creating a note"""
+        payload = {
+            'title': 'Sample note',
+            'description': 'Something',
+        }
+        res = self.client.post(NOTES_URL, payload)
+
+        self.assertEqual(res.status_code, status.HTTP_201_CREATED)
+        note = Note.objects.get(id=res.data['id'])
+        for key, value in payload.items():
+            self.assertEqual(getattr(note, key), value)
+        self.assertEqual(note.user, self.user)
