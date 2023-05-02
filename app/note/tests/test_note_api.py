@@ -10,9 +10,15 @@ from rest_framework import status
 
 from core.models import Note
 
-from note.serializers import NoteSerializer
+from note.serializers import (NoteSerializer,
+                              NoteDetailSerializer)
 
 NOTES_URL = reverse('note:note-list')
+
+
+def detail_url(note):
+    """Create and return a note detail URL."""
+    return reverse('note:note-detail', args=[note_id])
 
 
 def create_note(user, **params):
@@ -79,4 +85,14 @@ class PrivateNoteApiTests(TestCase):
         notes = Note.objects.filter(user=self.user)
         serializer = NoteSerializer(notes, many=True)
         self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertEqual(res.data, serializer.data)
+
+    def test_get_note_detail(self):
+        """Test get note detail."""
+        note = create_note(user=self.user)
+
+        url = detail_url(note.id)
+        res = self.client.get(url)
+
+        serializer = NoteDetailSerializer(note)
         self.assertEqual(res.data, serializer.data)
