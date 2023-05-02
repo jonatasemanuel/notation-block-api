@@ -16,7 +16,7 @@ from note.serializers import (NoteSerializer,
 NOTES_URL = reverse('note:note-list')
 
 
-def detail_url(note):
+def detail_url(note_id):
     """Create and return a note detail URL."""
     return reverse('note:note-detail', args=[note_id])
 

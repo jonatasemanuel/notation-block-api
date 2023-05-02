@@ -12,7 +12,7 @@ from core.models import Note
 
 class NoteViewSet(viewsets.ModelViewSet):
     """View for manage note APIs."""
-    serializer_class = serializers.NoteSerializer
+    serializer_class = serializers.NoteDetailSerializer
     queryset = Note.objects.all()
     authentication_classes = [TokenAuthentication]
     permission_classes = [IsAuthenticated]
@@ -20,3 +20,10 @@ class NoteViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         """Retrieve notes for authenticated user."""
         return self.queryset.filter(user=self.request.user).order_by('-id')
+
+    def get_serializer(self):
+        """Return the serializer class for request."""
+        if self.action == 'list':
+            return serializers.NoteSerializer
+
+        return self.serializer_class
