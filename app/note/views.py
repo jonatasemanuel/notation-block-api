@@ -21,7 +21,7 @@ class NoteViewSet(viewsets.ModelViewSet):
         """Retrieve notes for authenticated user."""
         return self.queryset.filter(user=self.request.user).order_by('-id')
 
-    def get_serializer(self):
+    def get_serializer_class(self):
         """Return the serializer class for request."""
         if self.action == 'list':
             return serializers.NoteSerializer

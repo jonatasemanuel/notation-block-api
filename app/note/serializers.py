@@ -16,3 +16,10 @@ class NoteSerializer(serializers.ModelSerializer):
             'edited_at', 'description', 'notation'
         ]
         read_only_fields = ['id']
+
+
+class NoteDetailSerializer(NoteSerializer):
+    """Serializer for note detail view."""
+
+    class Meta(NoteSerializer.Meta):
+        fields = NoteSerializer.Meta.fields + ['description', 'notation']
