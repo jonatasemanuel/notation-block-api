@@ -8,7 +8,7 @@ from django.urls import reverse
 from rest_framework.test import APIClient
 from rest_framework import status
 
-from core.models import Note
+from core.models import Tag, Note
 
 from note.serializers import (NoteSerializer,
                               NoteDetailSerializer)
@@ -188,3 +188,91 @@ class PrivateNoteApiTests(TestCase):
 
         self.assertEqual(res.status_code, status.HTTP_404_NOT_FOUND)
         self.assertTrue(Note.objects.filter(id=note.id).exists())
+
+    def test_create_recipe_with_new_tags(self):
+        """Test creating a recipe with new tags."""
+        payload = {
+            'title': 'How ?',
+            'res': 'Livro, 2019',
+            'description': 'Something....',
+            'notation': 'Yes',
+            'tags': [{'name': 'Data Science'}, {'name': 'Data Base'}]
+        }
+        res = self.client.post(NOTES_URL, payload, format='json')
+
+        self.assertEqual(res.status_code, status.HTTP_201_CREATED)
+        notes = Note.objects.filter(user=self.user)
+        self.assertEqual(notes.count(), 1)
+        note = notes[0]
+        self.assertEqual(note.tags.count(), 2)
+        for tag in payload['tags']:
+            exists = note.tags.filter(
+                name=tag['name'],
+                user=self.user,
+            ).exists()
+            self.assertTrue(exists)
+
+    def create_note_with_existing_tags(self):
+        """Test creating a note with existing tag."""
+        tag_code = Tag.objects.create(user=self.client, name='Code')
+        payload = {
+            'title': 'Django for begginers',
+            'res': 'some like',
+            'description': 'Something234....',
+            'notation': 'YesYes',
+            'tags': [{'name': 'Data Science'}, {'name': 'Code'}]
+        }
+        res = self.client.post(NOTES_URL, payload, format='json')
+
+        self.assertEqual(res.status_code, status.HTTP_201_CREATED)
+        notes = Note.objects.filter(user=self.user)
+        self.assertEqual(notes.count(), 1)
+        note = notes[0]
+        self.assertEqual(note.tags.count(), 2)
+        self.assertIn(tag_code, note.tags.all())
+        for tag in payload['tags']:
+            exists = note.tags.filter(
+                name=tag['name'],
+                user=self.user,
+            ).exists()
+            self.assertTrue(exists)
+
+    def test_create_tag_on_update(self):
+        """Test creating tag when updating a note."""
+        note = create_note(user=self.user)
+
+        payload = {'tags': [{'name': 'Nodejs'}]}
+        url = detail_url(note.id)
+        res = self.client.patch(url, payload, format='json')
+
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        new_tag = Tag.objects.get(user=self.user, name='Nodejs')
+        self.assertIn(new_tag, note.tags.all())
+
+    def test_update_note_assign_tag(self):
+        """Test assigning an existing tag when updating a recipe."""
+        tag_docker = Tag.objects.create(user=self.user, name='Docker')
+        note = create_note(user=self.user)
+        note.tags.add(tag_docker)
+
+        tag_aws = Tag.objects.create(user=self.user, name='AWS')
+        payload = {'tags': [{'name': 'AWS'}]}
+        url = detail_url(note.id)
+        res = self.client.patch(url, payload, format='json')
+
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertIn(tag_aws, note.tags.all())
+        self.assertNotIn(tag_docker, note.tags.all())
+
+    def test_clear_recipe_tags(self):
+        """Test clearing a notes tags."""
+        tag = Tag.objects.create(user=self.user, name='CSS')
+        note = create_note(user=self.user)
+        note.tags.add(tag)
+
+        payload = {'tags': []}
+        url = detail_url(note.id)
+        res = self.client.patch(url, payload, format='json')
+
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertEqual(note.tags.count(), 0)

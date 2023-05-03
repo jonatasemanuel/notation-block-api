@@ -53,6 +53,7 @@ class Note(models.Model):
     ref = models.CharField(max_length=700, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     edited_at = models.DateTimeField(auto_now=True)
+    tags = models.ManyToManyField('Tag')
 
     def __str__(self):
         return self.title
