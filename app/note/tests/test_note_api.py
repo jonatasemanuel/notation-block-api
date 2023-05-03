@@ -34,6 +34,7 @@ def create_note(user, **params):
     note = Note.objects.create(user=user, **defaults)
     return note
 
+
 def create_user(**params):
     """Create and return a new user."""
     return get_user_model().objects.create_user(**params)
@@ -142,7 +143,7 @@ class PrivateNoteApiTests(TestCase):
             'title': 'new note title',
             'ref': 'http://example.com/docs.pdf',
             'description': 'No description.',
-            'notation':'new note',
+            'notation': 'new note',
         }
 
         url = detail_url(note.id)
