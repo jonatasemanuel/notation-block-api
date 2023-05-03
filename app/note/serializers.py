@@ -3,7 +3,7 @@ Serializers for recipe APIs
 """
 from rest_framework import serializers
 
-from core.models import Note
+from core.models import Note, Tag
 
 
 class NoteSerializer(serializers.ModelSerializer):
@@ -23,3 +23,12 @@ class NoteDetailSerializer(NoteSerializer):
 
     class Meta(NoteSerializer.Meta):
         fields = NoteSerializer.Meta.fields + ['description', 'notation']
+
+
+class TagSerializer(serializers.ModelSerializer):
+    """Serializer fot tags."""
+
+    class Meta:
+        model = Tag
+        fields = ['id', 'name']
+        read_only_fields = ['id']

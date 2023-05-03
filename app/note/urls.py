@@ -8,6 +8,7 @@ from note import views
 
 router = DefaultRouter()
 router.register('note', views.NoteViewSet)
+router.register('tags', views.TagViewSet)
 
 app_name = 'note'
 
