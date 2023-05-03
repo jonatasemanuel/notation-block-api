@@ -34,7 +34,8 @@ class NoteViewSet(viewsets.ModelViewSet):
         serializer.save(user=self.request.user)
 
 
-class TagViewSet(mixins.UpdateModelMixin,
+class TagViewSet(mixins.DestroyModelMixin,
+                 mixins.UpdateModelMixin,
                  mixins.ListModelMixin,
                  viewsets.GenericViewSet):
     """Manage tags in the database."""
