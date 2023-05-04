@@ -3,7 +3,16 @@ Serializers for recipe APIs
 """
 from rest_framework import serializers
 
-from core.models import Note, Tag
+from core.models import Note, Tag, Todo
+
+
+class TodoSerializer(serializers.ModelSerializer):
+    """Serializer for todos."""
+
+    class Meta:
+        model = Todo
+        fields = ['id', 'title', 'description', 'completed']
+        read_only_fields = ['id']
 
 
 class TagSerializer(serializers.ModelSerializer):

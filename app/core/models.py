@@ -54,6 +54,7 @@ class Note(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     edited_at = models.DateTimeField(auto_now=True)
     tags = models.ManyToManyField('Tag')
+    todos = models.ManyToManyField('Todo')
 
     def __str__(self):
         return self.title
@@ -69,3 +70,17 @@ class Tag(models.Model):
 
     def __str__(self):
         return self.name
+
+
+class Todo(models.Model):
+    """Todo for notes."""
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+    )
+    title = models.CharField(max_length=100)
+    description = models.CharField(max_length=255)
+    completed = models.BooleanField(default=False)
+
+    def __str__(self):
+        return self.title

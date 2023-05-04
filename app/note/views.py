@@ -8,7 +8,7 @@ from rest_framework import (mixins,
 
 from note import serializers
 
-from core.models import Note, Tag
+from core.models import Note, Tag, Todo
 
 
 class NoteViewSet(viewsets.ModelViewSet):
@@ -47,3 +47,16 @@ class TagViewSet(mixins.DestroyModelMixin,
     def get_queryset(self):
         """Filter queryset to authenticated user."""
         return self.queryset.filter(user=self.request.user).order_by('-name')
+
+
+class TodoViewSet(mixins.ListModelMixin,
+                  viewsets.GenericViewSet):
+    """Manage todos in the database."""
+    serializer_class = serializers.TodoSerializer
+    queryset = Todo.objects.all()
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        """Filter queryset to authenticated user."""
+        return self.queryset.filter(user=self.request.user).order_by('-id')
