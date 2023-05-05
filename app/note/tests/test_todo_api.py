@@ -13,6 +13,10 @@ from core.models import Todo
 
 TODOS_URL = reverse('note:todo-list')
 
+def detail_url(todo_id):
+    """Create and return an todo detail URL."""
+    return reverse('note:todo-detail', args=[todo_id])
+
 
 def create_user(email='user@example.com', password='testpass123'):
     return get_user_model().objects.create_user(
@@ -65,3 +69,26 @@ class PrivateTodosApiTests(TestCase):
         self.assertEqual(len(res.data), 1)
         self.assertEqual(res.data[0]['title'], todo.title)
         self.assertEqual(res.data[0]['id'], todo.id)
+
+    def test_update_todo(self):
+        """Test updating a task."""
+        todo = Todo.objects.create(user=self.user, title='Run at  9')
+
+        payload = {'title': 'Watch a movie'}
+        url = detail_url(todo.id)
+        res = self.client.patch(url, payload)
+
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        todo.refresh_from_db()
+        self.assertEqual(todo.title, payload['title'])
+
+    def test_delete_todo(self):
+        """Test deleting an task."""
+        todo = Todo.objects.create(user=self.user, title='Do nothing')
+
+        url = detail_url(todo.id)
+        res = self.client.delete(url)
+
+        self.assertEqual(res.status_code, status.HTTP_204_NO_CONTENT)
+        todos = Todo.objects.filter(user=self.user)
+        self.assertFalse(todos.exists())

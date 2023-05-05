@@ -8,7 +8,7 @@ from django.urls import reverse
 from rest_framework.test import APIClient
 from rest_framework import status
 
-from core.models import Tag, Note
+from core.models import Tag, Note, Todo
 
 from note.serializers import (NoteSerializer,
                               NoteDetailSerializer)
@@ -276,3 +276,25 @@ class PrivateNoteApiTests(TestCase):
 
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         self.assertEqual(note.tags.count(), 0)
+
+    def test_create_note_with_new_todos(self):
+        """Test creatin a note with new todos."""
+        payload = {
+            'title': 'Django for begginers',
+            'res': 'some like',
+            'description': 'Something234....',
+            'todos': [{'title': 'Check e- mails'}, {'title': 'Go workout'}],
+            'notation': 'YesYes',
+        }
+        res = self.client.post(NOTES_URL, payload, format='json')
+
+        self.assertEqual(res.status_code, status.HTTP_201_CREATED)
+        notes = Note.objects.filter(user=self.user)
+        self.assertEqual(notes.count(), 1)
+        note = assertEqual(note.todos.count(), 2)
+        for task in payload['todos']:
+            exists = note.todos.filter(
+                title=task['title'],
+                user=self.user,
+            ).exists()
+            self.assertTrue(exists)
