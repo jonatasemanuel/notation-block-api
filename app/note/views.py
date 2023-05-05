@@ -49,7 +49,9 @@ class TagViewSet(mixins.DestroyModelMixin,
         return self.queryset.filter(user=self.request.user).order_by('-name')
 
 
-class TodoViewSet(mixins.ListModelMixin,
+class TodoViewSet(mixins.DestroyModelMixin,
+                  mixins.UpdateModelMixin,
+                  mixins.ListModelMixin,
                   viewsets.GenericViewSet):
     """Manage todos in the database."""
     serializer_class = serializers.TodoSerializer

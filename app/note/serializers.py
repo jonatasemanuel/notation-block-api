@@ -27,12 +27,13 @@ class TagSerializer(serializers.ModelSerializer):
 class NoteSerializer(serializers.ModelSerializer):
     """Serializer for notes."""
     tags = TagSerializer(many=True, required=False)
+    todos = TodoSerializer(many=True, required=False)
 
     class Meta:
         model = Note
         fields = [
-            'id', 'title', 'ref', 'created_at',
-            'edited_at', 'description', 'notation', 'tags'
+            'id', 'title', 'ref', 'created_at','edited_at',
+            'description', 'notation', 'tags', 'todos',
         ]
         read_only_fields = ['id']
 
@@ -46,11 +47,24 @@ class NoteSerializer(serializers.ModelSerializer):
             )
             note.tags.add(tag_obj)
 
+    def _create_todos(self, todos, note):
+        """Handle creating todos as needed. """
+        auth_user = self.context['request'].user
+        for task in todos:
+            task_obj, create = Todo.objects.create(
+                user=auth_user,
+                **task,
+            )
+            note.todos.add(task_obj)
+
+
     def create(self, validated_data):
         """Create a note."""
         tags = validated_data.pop('tags', [])
+        todos = validated_data.pop('todos', [])
         note = Note.objects.create(**validated_data)
         self._get_or_create_tags(tags, note)
+        self._create_todos(todos, note)
 
         return note
 
