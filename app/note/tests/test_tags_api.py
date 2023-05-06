@@ -9,8 +9,7 @@ from rest_framework.test import APIClient
 from rest_framework import status
 
 from note.serializers import TagSerializer
-from core.models import (Tag,
-                         Note)
+from core.models import Tag
 
 
 TAGS_URL = reverse('note:tag-list')
