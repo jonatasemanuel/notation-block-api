@@ -283,18 +283,84 @@ class PrivateNoteApiTests(TestCase):
             'title': 'Django for begginers',
             'res': 'some like',
             'description': 'Something234....',
-            'todos': [{'title': 'Check e- mails'}, {'title': 'Go workout'}],
             'notation': 'YesYes',
+            'todos': [{'title': 'Check e- mails'}, {'title': 'Go workout'}],
         }
         res = self.client.post(NOTES_URL, payload, format='json')
 
         self.assertEqual(res.status_code, status.HTTP_201_CREATED)
         notes = Note.objects.filter(user=self.user)
         self.assertEqual(notes.count(), 1)
-        note = assertEqual(note.todos.count(), 2)
+        note = notes[0]
+        self.assertEqual(note.todos.count(), 2)
         for task in payload['todos']:
             exists = note.todos.filter(
                 title=task['title'],
                 user=self.user,
             ).exists()
             self.assertTrue(exists)
+
+    def test_create_note_with_existing_todos(self):
+        """Test creating a new note with existing todo."""
+        todo = Todo.objects.create(user=self.user, title='Task1')
+        payload = {
+            'title': 'Django for begginers',
+            'res': 'some like',
+            'description': 'Something234....',
+            'notation': 'YesYes',
+            'todos': [{'title': 'Task1'}, {'title': 'Go workout'}],
+        }
+        res = self.client.post(NOTES_URL, payload, format='json')
+
+        self.assertEqual(res.status_code, status.HTTP_201_CREATED)
+        notes = Note.objects.filter(user=self.user)
+        self.assertEqual(notes.count(), 1)
+        note = notes[0]
+        self.assertEqual(note.todos.count(), 2)
+        self.assertIn(todo, note.todos.all())
+        for todo in payload['todos']:
+            exists = note.todos.filter(
+                title=todo['title'],
+                user=self.user,
+            ).exists()
+            self.assertTrue(exists)
+
+    def test_create_todo_on_update(self):
+        """Test creating an todo when updating a note."""
+        note = create_note(user=self.user)
+
+        payload = {'todos': [{'title': 'Task1'}]}
+        url = detail_url(note.id)
+        res = self.client.patch(url, payload, format='json')
+
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        new_todo = Todo.objects.get(user=self.user, title='Task1')
+        self.assertIn(new_todo, note.todos.all())
+
+    def test_update_note_assign_todo(self):
+        """Test assigning an existing todo when updating a note."""
+        todo1 = Todo.objects.create(user=self.user, title='Task1')
+        note = create_note(user=self.user)
+        note.todos.add(todo1)
+
+        todo2 = Todo.objects.create(user=self.user, title='Task2')
+        payload = {'todos': [{'title': 'Task2'}]}
+        url = detail_url(note.id)
+        res = self.client.patch(url, payload, format='json')
+
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertIn(todo2, note.todos.all())
+        self.assertNotIn(todo1, note.todos.all())
+
+    def test_clear_note_todos(self):
+        """Test clearing a note todos."""
+        todo = Todo.objects.create(user=self.user, title='Task11')
+        note = create_note(user=self.user)
+        note.todos.add(todo)
+
+        payload = {'todos': []}
+        url = detail_url(note.id)
+        res = self.client.patch(url, payload, format='json')
+
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertEqual(note.todos.count(), 0)
