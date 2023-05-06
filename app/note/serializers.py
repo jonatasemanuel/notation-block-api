@@ -11,7 +11,7 @@ class TodoSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Todo
-        fields = ['id', 'title', 'description', 'completed']
+        fields = ['id', 'title']
         read_only_fields = ['id']
 
 
@@ -32,7 +32,7 @@ class NoteSerializer(serializers.ModelSerializer):
     class Meta:
         model = Note
         fields = [
-            'id', 'title', 'ref', 'created_at','edited_at',
+            'id', 'title', 'ref', 'created_at', 'edited_at',
             'description', 'notation', 'tags', 'todos',
         ]
         read_only_fields = ['id']
@@ -47,16 +47,15 @@ class NoteSerializer(serializers.ModelSerializer):
             )
             note.tags.add(tag_obj)
 
-    def _create_todos(self, todos, note):
+    def _get_or_create_todos(self, todos, note):
         """Handle creating todos as needed. """
         auth_user = self.context['request'].user
-        for task in todos:
-            task_obj, create = Todo.objects.create(
+        for todo in todos:
+            todo_obj, created = Todo.objects.get_or_create(
                 user=auth_user,
-                **task,
+                **todo,
             )
-            note.todos.add(task_obj)
-
+            note.todos.add(todo_obj)
 
     def create(self, validated_data):
         """Create a note."""
@@ -64,16 +63,22 @@ class NoteSerializer(serializers.ModelSerializer):
         todos = validated_data.pop('todos', [])
         note = Note.objects.create(**validated_data)
         self._get_or_create_tags(tags, note)
-        self._create_todos(todos, note)
+        self._get_or_create_todos(todos, note)
 
         return note
 
     def update(self, instance, validated_data):
         """Update recipe."""
         tags = validated_data.pop('tags', None)
+        todos = validated_data.pop('todos', None)
+
         if tags is not None:
             instance.tags.clear()
             self._get_or_create_tags(tags, instance)
+
+        if todos is not None:
+            instance.todos.clear()
+            self._get_or_create_todos(todos, instance)
 
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
@@ -86,4 +91,6 @@ class NoteDetailSerializer(NoteSerializer):
     """Serializer for note detail view."""
 
     class Meta(NoteSerializer.Meta):
-        fields = NoteSerializer.Meta.fields + ['description', 'notation']
+        fields = NoteSerializer.Meta.fields + [
+            'description', 'notation', 'todos'
+        ]
