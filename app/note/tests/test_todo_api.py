@@ -13,6 +13,7 @@ from core.models import Todo
 
 TODOS_URL = reverse('note:todo-list')
 
+
 def detail_url(todo_id):
     """Create and return an todo detail URL."""
     return reverse('note:todo-detail', args=[todo_id])
