@@ -364,3 +364,24 @@ class PrivateNoteApiTests(TestCase):
 
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         self.assertEqual(note.todos.count(), 0)
+
+    def test_filter_by_tags(self):
+        """Test filtering notes by tags"""
+        note1 = create_note(user=self.user, title='SQL')
+        note2 = create_note(user=self.user, title='Databases')
+        tag1 = Tag.objects.create(user=self.user, name='Model')
+        tag2 = Tag.objects.create(user=self.user, name='Cloud')
+
+        note1.tags.add(tag1)
+        note2.tags.add(tag2)
+        note3 = create_note(user=self.user, title='DynamoDB')
+
+        params = {'tags': f'{tag1.id}, {tag2.id}'}
+        res = self.client.get(NOTES_URL, params)
+
+        s1 = NoteSerializer(note1)
+        s2 = NoteSerializer(note2)
+        s3 = NoteSerializer(note3)
+        self.assertIn(s1.data, res.data)
+        self.assertIn(s2.data, res.data)
+        self.assertNotIn(s3.data, res.data)

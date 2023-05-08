@@ -9,7 +9,7 @@ from rest_framework.test import APIClient
 from rest_framework import status
 
 from note.serializers import TagSerializer
-from core.models import Tag
+from core.models import Tag, Note
 
 
 TAGS_URL = reverse('note:tag-list')
@@ -96,3 +96,42 @@ class PrivateTagsApiTests(TestCase):
         self.assertEqual(res.status_code, status.HTTP_204_NO_CONTENT)
         tags = Tag.objects.filter(user=self.user)
         self.assertFalse(tags.exists())
+
+    def test_filter_tags_assigned_to_notes(self):
+        """Test listing tags to those a assigned to notes."""
+        tag1 = Tag.objects.create(user=self.user, name='Cloud')
+        tag2 = Tag.objects.create(user=self.user, name='Database')
+        note = Note.objects.create(
+            title='SQL fundamentals',
+            description='Some text',
+            user=self.user
+        )
+        note.tags.add(tag1)
+
+        res = self.client.get(TAGS_URL, {'assigned_only': 1})
+
+        s1 = TagSerializer(tag1)
+        s2 = TagSerializer(tag2)
+        self.assertIn(s1.data, res.data)
+        self.assertNotIn(s2.data, res.data)
+
+    def test_filtered_tags_unique(self):
+        """Test filtered tags returns a unique list."""
+        tag = Tag.objects.create(user=self.user, name='Cloud')
+        Tag.objects.create(user=self.user, name='Database')
+        note1 = Note.objects.create(
+            title='SQL introduction',
+            description='Something',
+            user=self.user,
+        )
+        note2 = Note.objects.create(
+            title='AWS',
+            description='Cloudddd.',
+            user=self.user
+        )
+        note1.tags.add(tag)
+        note2.tags.add(tag)
+
+        res = self.client.get(TAGS_URL, {'assigned_only': 1})
+
+        self.assertEqual(len(res.data), 1)
