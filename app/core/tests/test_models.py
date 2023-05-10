@@ -76,8 +76,11 @@ class ModelTests(TestCase):
     def test_create_todo(self):
         """Test creating a todo is successful."""
         user = create_user()
-        todo = models.Todo.objects.create(
-            user=user,
-            title='Task 1'
-        )
+        todo = models.Todo.objects.create(user=user, title='Task 1')
         self.assertEqual(str(todo), todo.title)
+
+    def test_create_link(self):
+        """Test creating a link is successful."""
+        user = create_user()
+        link = models.Link.objects.create(user=user, name='Ref one')
+        self.assertEqual(str(link), link.name)
