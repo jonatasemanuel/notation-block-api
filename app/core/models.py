@@ -55,6 +55,7 @@ class Note(models.Model):
     edited_at = models.DateTimeField(auto_now=True)
     tags = models.ManyToManyField('Tag')
     todos = models.ManyToManyField('Todo')
+    links = models.ManyToManyField('Link')
 
     def __str__(self):
         return self.title
@@ -84,3 +85,15 @@ class Todo(models.Model):
 
     def __str__(self):
         return self.title
+
+
+class Link(models.Model):
+    """Links and references useded."""
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+    )
+    name = models.CharField(max_length=700)
+
+    def __str__(self):
+        return self.name
