@@ -8,7 +8,7 @@ from django.urls import reverse
 from rest_framework.test import APIClient
 from rest_framework import status
 
-from core.models import Tag, Note, Todo
+from core.models import Tag, Note, Todo, Link
 
 from note.serializers import (NoteSerializer,
                               NoteDetailSerializer)
@@ -326,7 +326,7 @@ class PrivateNoteApiTests(TestCase):
             self.assertTrue(exists)
 
     def test_create_todo_on_update(self):
-        """Test creating an todo when updating a note."""
+        """Test creating a todo when updating a note."""
         note = create_note(user=self.user)
 
         payload = {'todos': [{'title': 'Task1'}]}
@@ -385,3 +385,55 @@ class PrivateNoteApiTests(TestCase):
         self.assertIn(s1.data, res.data)
         self.assertIn(s2.data, res.data)
         self.assertNotIn(s3.data, res.data)
+
+    def test_create_note_with_new_refs(self):
+        """Test creating a note with new refs."""
+        payload = {
+            'title': 'Note agains',
+            'description': 'Something',
+            'links': [
+                {'name': 'https://example.com'},
+                {'name': 'Drummont, 2019'}]
+        }
+        res = self.client.post(NOTES_URL, payload, format='json')
+
+        self.assertEqual(res.status_code, status.HTTP_201_CREATED)
+        notes = Note.objects.filter(user=self.user)
+        self.assertEqual(notes.count(), 1)
+        note = notes[0]
+        self.assertEqual(note.links.count(), 2)
+        for link in payload['links']:
+            exists = note.links.filter(
+                name=link['name'],
+                user=self.user,
+            ).exists()
+            self.assertTrue(exists)
+
+    def test_create_ref_on_update(self):
+        """Test creating an ref when updating a note."""
+        note = create_note(user=self.user)
+
+        payload = {'links': [{'name': 'Homero, p.214, 2912'}]}
+        url = detail_url(note.id)
+
+        res = self.client.patch(url, payload, format='json')
+
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        new_link = Link.objects.get(
+            user=self.user,
+            name='Homero, p.214, 2912'
+        )
+        self.assertIn(new_link, note.links.all())
+
+    def test_clear_note_refs(self):
+        """Test clearing a note refs.."""
+        link = Link.objects.create(user=self.user, name='Dad, 2019')
+        note = create_note(user=self.user)
+        note.links.add(link)
+
+        payload = {'links': []}
+        url = detail_url(note.id)
+        res = self.client.patch(url, payload, format='json')
+
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertEqual(note.links.count(), 0)
