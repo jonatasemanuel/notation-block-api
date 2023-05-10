@@ -10,6 +10,7 @@ router = DefaultRouter()
 router.register('note', views.NoteViewSet)
 router.register('tags', views.TagViewSet)
 router.register('todos', views.TodoViewSet)
+router.register('links', views.LinkViewSet)
 
 app_name = 'note'
 

@@ -3,7 +3,7 @@ Serializers for recipe APIs
 """
 from rest_framework import serializers
 
-from core.models import Note, Tag, Todo
+from core.models import Note, Tag, Todo, Link
 
 
 class TodoSerializer(serializers.ModelSerializer):
@@ -24,16 +24,26 @@ class TagSerializer(serializers.ModelSerializer):
         read_only_fields = ['id']
 
 
+class LinkSerializer(serializers.ModelSerializer):
+    """Serializer for refs."""
+
+    class Meta:
+        model = Link
+        fields = ['id', 'name']
+        read_only_fields = ['id']
+
+
 class NoteSerializer(serializers.ModelSerializer):
     """Serializer for notes."""
     tags = TagSerializer(many=True, required=False)
     todos = TodoSerializer(many=True, required=False)
+    links = LinkSerializer(many=True, required=False)
 
     class Meta:
         model = Note
         fields = [
             'id', 'title', 'ref', 'created_at', 'edited_at',
-            'description', 'notation', 'tags', 'todos',
+            'description', 'notation', 'tags', 'todos', 'links'
         ]
         read_only_fields = ['id']
 
@@ -57,13 +67,24 @@ class NoteSerializer(serializers.ModelSerializer):
             )
             note.todos.add(todo_obj)
 
+    def _create_links(self, links, note):
+        auth_user = self.context['request'].user
+        for link in links:
+            link_obj, created = Link.objects.get_or_create(
+                user=auth_user,
+                **link,
+            )
+            note.links.add(link_obj)
+
     def create(self, validated_data):
         """Create a note."""
         tags = validated_data.pop('tags', [])
         todos = validated_data.pop('todos', [])
+        links = validated_data.pop('links', [])
         note = Note.objects.create(**validated_data)
         self._get_or_create_tags(tags, note)
         self._get_or_create_todos(todos, note)
+        self._create_links(links, note)
 
         return note
 
@@ -71,6 +92,7 @@ class NoteSerializer(serializers.ModelSerializer):
         """Update recipe."""
         tags = validated_data.pop('tags', None)
         todos = validated_data.pop('todos', None)
+        links = validated_data.pop('links', None)
 
         if tags is not None:
             instance.tags.clear()
@@ -79,6 +101,10 @@ class NoteSerializer(serializers.ModelSerializer):
         if todos is not None:
             instance.todos.clear()
             self._get_or_create_todos(todos, instance)
+
+        if links is not None:
+            instance.links.clear()
+            self._create_links(links, instance)
 
         for attr, value in validated_data.items():
             setattr(instance, attr, value)

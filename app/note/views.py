@@ -12,7 +12,7 @@ from drf_spectacular.utils import (OpenApiParameter,
 
 from note import serializers
 
-from core.models import Note, Tag, Todo
+from core.models import Note, Tag, Todo, Link
 
 
 @extend_schema_view(
@@ -92,6 +92,12 @@ class BaseNoteAttrViewSet(mixins.DestroyModelMixin,
 
         return queryset.filter(
             user=self.request.user).order_by('-name').distinct()
+
+
+class LinkViewSet(BaseNoteAttrViewSet):
+    """Manage refs in the database."""
+    serializer_class = serializers.LinkSerializer
+    queryset = Link.objects.all()
 
 
 class TagViewSet(BaseNoteAttrViewSet):
