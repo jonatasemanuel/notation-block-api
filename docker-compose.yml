@@ -1,19 +1,20 @@
 version: "3.9"
 
 services:
-  app:
+  backend:
     build:
-      context: .
-      args:
-        - DEV=true
-    ports:
-      - "8000:8000"
-    volumes:
-      - ./app:/app
+      context: ./backend
+      dockerfile: Dockerfile
     command: >
       sh -c "python manage.py wait_for_db &&
              python manage.py migrate &&
              python manage.py runserver 0.0.0.0:8000"
+    ports:
+      - "8000:8000"
+    container_name: backend
+    image: backend_image
+    volumes:
+      - ./backend:/app/backend
 
     environment:
       - DB_HOST=db
@@ -23,8 +24,26 @@ services:
     depends_on:
       - db
 
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+
+    ports:
+      - "3000:3000"
+
+    volumes:
+      - ./frontend:/app/frontend
+
+    container_name: frontend
+    image: frontend_image
+
+    depends_on:
+      - backend
+
   db:
     image: postgres:13-alpine
+    container_name: postgres
     volumes:
       - dev-db-data:/var/lib/postgresql/data
     environment:
