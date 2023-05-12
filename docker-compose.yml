@@ -1,20 +1,33 @@
 version: "3.9"
 
 services:
+
+  db:
+    image: postgres:13-alpine
+    container_name: postgres
+    volumes:
+      - dev-db-data:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_DB=devdb
+      - POSTGRES_USER=devuser
+      - POSTGRES_PASSWORD=changeme
+
   backend:
     build:
       context: ./backend
       dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
     command: >
       sh -c "python manage.py wait_for_db &&
              python manage.py migrate &&
              python manage.py runserver 0.0.0.0:8000"
-    ports:
-      - "8000:8000"
+    expose:
+      - 8000
     container_name: backend
     image: backend_image
     volumes:
-      - ./backend:/app/backend
+      - ./app:/backend
 
     environment:
       - DB_HOST=db
@@ -31,25 +44,17 @@ services:
 
     ports:
       - "3000:3000"
+    command: /bin/sh -c 'yarn install && yarn start'
 
     volumes:
-      - ./frontend:/app/frontend
+      - ./app:/frontend
 
     container_name: frontend
     image: frontend_image
+    expose:
+      - 3000
 
     depends_on:
       - backend
-
-  db:
-    image: postgres:13-alpine
-    container_name: postgres
-    volumes:
-      - dev-db-data:/var/lib/postgresql/data
-    environment:
-      - POSTGRES_DB=devdb
-      - POSTGRES_USER=devuser
-      - POSTGRES_PASSWORD=changeme
-
 volumes:
   dev-db-data:
