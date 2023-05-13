@@ -1,17 +1,6 @@
 version: "3.9"
 
 services:
-
-  db:
-    image: postgres:13-alpine
-    container_name: postgres
-    volumes:
-      - dev-db-data:/var/lib/postgresql/data
-    environment:
-      - POSTGRES_DB=devdb
-      - POSTGRES_USER=devuser
-      - POSTGRES_PASSWORD=changeme
-
   backend:
     build:
       context: ./backend
@@ -56,5 +45,16 @@ services:
 
     depends_on:
       - backend
+
+  db:
+    image: postgres:13-alpine
+    container_name: postgres
+    volumes:
+      - dev-db-data:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_DB=devdb
+      - POSTGRES_USER=devuser
+      - POSTGRES_PASSWORD=changeme
+
 volumes:
   dev-db-data:
