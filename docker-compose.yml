@@ -14,7 +14,7 @@ services:
     container_name: backend
     image: backend_image
     volumes:
-      - ./backend:/app/backend
+      - ./app/backend
 
     environment:
       - DB_HOST=db
@@ -33,7 +33,7 @@ services:
       - "3000:3000"
 
     volumes:
-      - ./frontend:/app/frontend
+      - ./app/frontend
 
     container_name: frontend
     image: frontend_image
