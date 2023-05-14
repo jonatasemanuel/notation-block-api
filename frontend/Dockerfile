@@ -1,10 +1,11 @@
-FROM node:14.16.0-alpine3.13
+FROM node
 
-WORKDIR /app/frontend
-COPY package*.json ./
-RUN npm install
-COPY . .
+RUN apt-key adv --fetch-keys http://dl.yarnpkg.com/debian/pubkey.gpg
+RUN echo "deb http://dl.yarnpkg.com/debian/ stable main" | tee /etc/apt/sources.list.d/yarn.list
+RUN apt-get update && apt-get install -y yarn
+RUN yarn global add webpack
+ADD . /app
+WORKDIR /app
 
-EXPOSE 3000
-
-CMD ["npm", "start"]
+RUN rm -rf node_modules
+# RUN yarn

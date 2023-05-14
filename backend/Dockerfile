@@ -1,17 +1,18 @@
 FROM python:3.9-alpine3.13
 
 ENV PYTHONBUFFERED 1
-ENV PYTHONDONTWRITEBYTECODE 1
+
+# RUN mkdir /app
 
 COPY ./requirements.txt /tmp/requirements.txt
 COPY ./requirements.dev.txt /tmp/requirements.dev.txt
-COPY .  /app/backend/
-WORKDIR /app/backend
+COPY ./backend /backend
+WORKDIR /backend
 # EXPOSE 8000
 
-# Build psycopg2-binary from source -- add required required dependencies
-RUN apk add --virtual .build-deps --no-cache postgresql-dev gcc python3-dev musl-dev && \
-        pip install --no-cache-dir -r requirements.txt && \
-        apk --purge del .build-deps
-
-CMD [ "python", "manage.py", "runserver", "0.0.0.0:8000" ]
+RUN python -m venv /py && \
+    /py/bin/pip install --upgrade pip && \
+    apk add --update --no-cache postgresql-client && \
+    apk add --update --no-cache --virtual .tmp-build-deps \
+        build-base postgresql-dev musl-dev && \
+    /py/bin/pip install -r /tmp/requirements.txt
