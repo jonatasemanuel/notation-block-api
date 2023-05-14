@@ -2,18 +2,15 @@ version: "3.9"
 
 services:
   backend:
+    volumes:
+      - static:/static
+      - ./backend:/app
+    env_file:
+      - .env
     build:
       context: ./backend
-      args:
-        - DEV=true
     ports:
       - "8000:8000"
-    volumes:
-      - ./backend:/backend
-    command: >
-      sh -c "python manage.py wait_for_db &&
-             python manage.py migrate &&
-             python manage.py runserver 0.0.0.0:8000"
 
     environment:
       - DB_HOST=db
@@ -23,6 +20,29 @@ services:
     depends_on:
       - db
 
+
+  frontend:
+    build:
+      context: ./frontend
+    volumes:
+      - ./frontend:/build
+    depends_on:
+      - backend
+
+
+  nginx:
+    build:
+      context: ./nginx
+    volumes:
+      - static:/static
+      - frontend:/var/www/frontend
+    ports:
+        - "80:80"
+    depends_on:
+        - backend
+        - frontend
+
+
   db:
     image: postgres:13-alpine
     volumes:
@@ -31,6 +51,10 @@ services:
       - POSTGRES_DB=devdb
       - POSTGRES_USER=devuser
       - POSTGRES_PASSWORD=changeme
+    ports:
+      - 5430:5432
 
 volumes:
+  static:
+  frontend:
   dev-db-data:
