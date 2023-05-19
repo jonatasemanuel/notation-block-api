@@ -1,17 +1,12 @@
-version: "3.9"
-
+version: "3"
 services:
   backend:
-    volumes:
-      - static:/static
-      - ./backend:/app
-    env_file:
-      - .env
-    build:
-      context: ./backend
     ports:
       - "8000:8000"
-
+    build:
+      context: ./backend/
+      dockerfile: Dockerfile
+    command: sh -c "python manage.py wait_for_db && python manage.py migrate && python && manage.py runserver 0.0.0.0:8000"
     environment:
       - DB_HOST=db
       - DB_NAME=devdb
@@ -20,41 +15,33 @@ services:
     depends_on:
       - db
 
-
   frontend:
     build:
       context: ./frontend
-    volumes:
-      - ./frontend:/build
+    ports:
+      - "80:80"
     depends_on:
       - backend
 
-
   nginx:
-    build:
-      context: ./nginx
+    image: nginx:latest
     volumes:
-      - static:/static
-      - frontend:/var/www/frontend
+      - .:/frontend/nginx.conf:ro
+    command: /bin/bash -c "envsubst < /frontend/nginx.conf > /etc/nginx/conf.d/default.conf && nginx -g 'daemon off;'"
     ports:
-        - "80:80"
+      - "80"
     depends_on:
-        - backend
-        - frontend
-
+      - backend
 
   db:
     image: postgres:13-alpine
     volumes:
-      - dev-db-data:/var/lib/postgresql/data
+      - evy-db-data:/var/lib/postgresql/data
     environment:
       - POSTGRES_DB=devdb
       - POSTGRES_USER=devuser
       - POSTGRES_PASSWORD=changeme
-    ports:
-      - 5430:5432
 
 volumes:
-  static:
-  frontend:
-  dev-db-data:
+  evy-db-data:
+  evy-static-data:

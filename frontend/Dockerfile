@@ -1,27 +1,21 @@
-FROM node:alpine
-
+FROM node:16-alpine as builder
+# Set the working directory to /app inside the container
 WORKDIR /app
+# Copy app files
 COPY . .
+# Install dependencies (npm ci makes sure the exact versions in the lockfile gets installed)
+RUN npm ci 
+# Build the app
+RUN npm run build
 
-RUN npm install
-
-CMD ["npm", "run", "build"]
-
-# FROM node:14-alpine AS builder
-
-# WORKDIR /opt/web
-# COPY . ./
-# RUN npm install
-
-# ENV PATH="./node_modules/.bin:$PATH"
-
-# RUN npm run build
-
-# FROM nginx:1.20.1-alpine
-# RUN apk --no-cache add curl
-# RUN curl -L https://github.com/a8m/envsubst/releases/download/v1.1.0/envsubst-`uname -s`-`uname -m` -o envsubst && \
-#     chmod +x envsubst && \
-#     mv envsubst /usr/local/bin
-# COPY ./nginx.config /etc/nginx/nginx.template
-# CMD ["/bin/sh", "-c", "envsubst < /etc/nginx/nginx.template > /etc/nginx/conf.d/default.conf && nginx -g 'daemon off;'"]
-# #COPY --from=builder /opt/web/build /usr/share/nginx/html
+# Bundle static assets with nginx
+FROM nginx:1.21.0-alpine as production
+ENV NODE_ENV production
+# Copy built assets from `builder` image
+COPY --from=builder /app/build /usr/share/nginx/html
+# Add your nginx.conf
+# COPY /nginx/nginx.conf /etc/nginx/conf.d/default.conf
+# Expose port
+EXPOSE 3000
+# Start nginx
+CMD ["nginx", "-g", "daemon off;"]
